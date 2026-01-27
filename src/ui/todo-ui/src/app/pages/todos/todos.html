@@ -1,0 +1,28 @@
+<!-- <button (click)="loadState()">Load State</button>
+<div *ngIf="loading">Loading...</div>
+
+<div *ngIf="!loading">
+    <input [(ngModel)]="title" placeholder="New todo" />
+    <button (click)="create()">Add</button>
+
+    <ul>
+        <li *ngFor="let t of todos">
+            #{{ t.id }} - {{ t.title }}
+        </li>
+    </ul>
+</div> -->
+
+<h2>Todos</h2>
+
+
+<input [(ngModel)]="title" placeholder="New todo" />
+<button (click)="create()">Add</button>
+<button (click)="load()">Load entire data</button>
+
+<p *ngIf="error" style="color:red">{{ error }}</p>
+
+<ul>
+    <li *ngFor="let t of todos$ | async">
+        #{{ t.id }} - {{ t.title }}
+    </li>
+</ul>

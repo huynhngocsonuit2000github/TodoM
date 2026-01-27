@@ -1,0 +1,32 @@
+@host = https://localhost:5000
+
+### Health (liveness)
+GET {{host}}/health
+
+### Ready (readiness)
+GET {{host}}/ready
+
+### Get all todos
+GET {{host}}/api/todos
+
+### Create a todo
+POST {{host}}/api/todos
+Content-Type: application/json
+
+{
+  "title": "Learn Microservices basics"
+}
+
+### Create another todo
+POST {{host}}/api/todos
+Content-Type: application/json
+
+{
+  "title": "Add Ingress -> BFF -> Gateway flow"
+}
+
+### Get all todos again
+GET {{host}}/api/todos
+
+### Get todo by Id
+GET {{host}}/api/todos/1
