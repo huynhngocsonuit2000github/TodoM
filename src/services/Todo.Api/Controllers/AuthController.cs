@@ -12,13 +12,10 @@ public class AuthController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        return Ok(new
-        {
-            role = new List<string>()
+        return Ok(new List<string>()
             {
                 // "admin", // can delete
                 "member", // read only
-            }
-        });
+            });
     }
 }
