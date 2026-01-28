@@ -30,3 +30,6 @@ GET {{host}}/api/todos
 
 ### Get todo by Id
 GET {{host}}/api/todos/1
+
+### Delete another todo
+DELETE {{host}}/api/todos/3

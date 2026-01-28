@@ -32,6 +32,16 @@ public class TodosController : ControllerBase
         return Store.TryGetValue(id, out var item) ? Ok(item) : NotFound();
     }
 
+    [HttpDelete("{id:int}")]
+    public IActionResult DeleteById(int id)
+    {
+        return Store.TryRemove(id, out _) ? Ok(new
+        {
+            status = "Success",
+            value = "No worry"
+        }) : NotFound();
+    }
+
     [HttpPost]
     public IActionResult Create([FromBody] CreateTodoRequest req)
     {

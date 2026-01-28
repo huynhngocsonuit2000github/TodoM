@@ -1,0 +1,4 @@
+@host = https://localhost:5000
+
+### Get all todos again
+GET {{host}}/api/auth
