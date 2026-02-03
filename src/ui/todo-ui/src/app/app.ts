@@ -16,7 +16,7 @@ export class App implements OnInit {
   ngOnInit(): void {
     this.auth.loadRolesIfEmpty().subscribe({
       error: () => {
-        this.auth.roles = []
+        this.auth.roles$.next([]);
       }
     });
   }

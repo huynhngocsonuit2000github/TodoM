@@ -1,6 +1,7 @@
 <div class="container" style="max-width:420px;">
     <div class="card">
         <h2>Login</h2>
+        <p class="error" *ngIf="error">{{ error }}</p>
 
         <form (ngSubmit)="login()" #f="ngForm" style="display:grid; gap:14px;">
             <input name="email" [(ngModel)]="email" placeholder="Email" required />

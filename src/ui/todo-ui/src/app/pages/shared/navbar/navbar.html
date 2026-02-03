@@ -2,5 +2,5 @@
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
     <a routerLink="/todos" routerLinkActive="active">Todos</a>
     <a routerLink="/about" routerLinkActive="active">About</a>
-    <a routerLink="/login" routerLinkActive="active">Login</a>
+    <a routerLink="/login" routerLinkActive="active"> {{ (isAuthenticated$ | async) ? 'Logout' : 'Login' }}</a>
 </nav>

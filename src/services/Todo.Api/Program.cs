@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,6 +18,13 @@ builder.Services.AddCors(o =>
          .AllowAnyMethod());
 });
 
+builder.Services
+    .AddAuthentication("FakeToken")
+    .AddScheme<AuthenticationSchemeOptions, FakeTokenAuthHandler>(
+        "FakeToken", options => { });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -29,6 +38,7 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

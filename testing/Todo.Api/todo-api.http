@@ -8,6 +8,7 @@ GET {{host}}/ready
 
 ### Get all todos
 GET {{host}}/api/todos
+Authorization: Bearer admin
 
 ### Create a todo
 POST {{host}}/api/todos

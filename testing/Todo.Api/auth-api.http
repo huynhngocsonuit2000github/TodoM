@@ -1,4 +1,14 @@
 @host = https://localhost:5000
 
-### Get all todos again
-GET {{host}}/api/auth
+### Login with admin role
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username":"admin",
+    "password":"123"
+}
+
+### Get admin authenticated
+GET {{host}}/api/auth/authenticated-user?token=admin
+Authorization: Bearer member
