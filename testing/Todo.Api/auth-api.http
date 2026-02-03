@@ -1,4 +1,4 @@
-@host = https://localhost:5000
+@host = http://localhost:5000
 
 ### Login with admin role
 POST {{host}}/api/auth/login
@@ -8,6 +8,10 @@ Content-Type: application/json
     "username":"admin",
     "password":"123"
 }
+
+### Login with Azure
+GET {{host}}/api/auth/login-az
+Content-Type: application/json
 
 ### Get admin authenticated
 GET {{host}}/api/auth/authenticated-user?token=admin

@@ -1,6 +1,23 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication.Cookies;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(5000, listenOptions =>
+    {
+        listenOptions.UseHttps(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".aspnet/https/todo.pfx"
+            )
+        );
+    });
+});
+
 
 // Add services to the container.
 
@@ -24,6 +41,26 @@ builder.Services
         "FakeToken", options => { });
 
 builder.Services.AddAuthorization();
+
+var tenantId = "";
+var clientId = "";
+var clientSecret = "";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie()
+.AddOpenIdConnect(options =>
+{
+    options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+    options.ClientId = clientId;
+    options.ClientSecret = clientSecret;
+    options.ResponseType = "code";
+    options.SaveTokens = true;
+});
+
 
 var app = builder.Build();
 
