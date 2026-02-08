@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Todo.Api.Models;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace Todo.Api.Controllers;
 
@@ -11,39 +11,107 @@ namespace Todo.Api.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    [HttpPost("login")]
-    public IActionResult LoginAsync(LoginModel model)
-    {
-        if (model.Username == "admin" && model.Password == "123")
-            return Ok(new { token = "admin" });
-
-        if (model.Username == "member" && model.Password == "123")
-            return Ok(new { token = "member" });
-
-        return BadRequest("Invalid credential!");
-    }
+    // ===================== AZURE LOGIN =====================
     [HttpGet("login-az")]
-    public IActionResult LoginAzureAsync()
+    [AllowAnonymous]
+    public IActionResult LoginAzure()
     {
+        var returnUrl = "http://localhost:4200/about";
+
+        var redirectUrl = Url.Action(
+            nameof(HandleLoginCallback),
+            "Auth",
+            new { returnUrl }
+        );
+
         return Challenge(
             new AuthenticationProperties
             {
-                RedirectUri = "http://localhost:4200/about"
+                RedirectUri = redirectUrl
             },
             OpenIdConnectDefaults.AuthenticationScheme
         );
     }
 
+    // ===================== AZURE CALLBACK =====================
+    [Authorize]
+    [HttpGet("handle-logincallback")]
+    public IActionResult HandleLoginCallback(string returnUrl)
+    {
+        var claims = User.Claims;
+
+        var objectId = claims.FirstOrDefault(c => c.Type == "oid")?.Value;
+        var tenantId = claims.FirstOrDefault(c => c.Type == "tid")?.Value;
+        var email =
+            claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
+            ?? claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+        // ✅ FE-readable cookie
+        Response.Cookies.Append(
+            "TODO_custom_cookies",
+            JsonSerializer.Serialize(new AppContextCookie
+            {
+                ObjectId = objectId,
+                TenantId = tenantId,
+                Email = email,
+                Tenant = "Azure",
+                CustomField = "RoleId123"
+            }),
+            new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = true,                // 🔥 REQUIRED
+                SameSite = SameSiteMode.None, // 🔥 REQUIRED
+                Path = "/"
+            }
+        );
+
+        return Redirect(returnUrl ?? "http://localhost:4200");
+    }
+
+    // ===================== AUTHENTICATED USER =====================
     [Authorize]
     [HttpGet("authenticated-user")]
-    public IActionResult GetAuthenticatedUserInfoAsync(string token)
+    public IActionResult AuthenticatedUser()
     {
-        if (token == "admin")
-            return Ok(new AuthUser() { Id = 1, Name = "User admin", Roles = new List<string>() { "admin", "member" } });
+        Request.Cookies.TryGetValue("TODO_custom_cookies", out var rawCookie);
 
-        if (token == "member")
-            return Ok(new AuthUser() { Id = 2, Name = "User member", Roles = new List<string>() { "member" } });
+        AppContextCookie? context = null;
 
-        return Unauthorized();
+        if (!string.IsNullOrWhiteSpace(rawCookie))
+        {
+            context = JsonSerializer.Deserialize<AppContextCookie>(
+                rawCookie,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }
+            );
+        }
+
+        var roleId = context?.CustomField;
+
+        var roles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value);
+
+
+        return Ok(new
+        {
+            name = User.Identity?.Name,
+            context,
+            roles = roleId == "RoleId123" ? new List<string>() { "admin", "member" } : new List<string>() { "member" },
+            azureRoles = roles
+        });
     }
+}
+
+// ===================== COOKIE MODEL =====================
+public class AppContextCookie
+{
+    public string? ObjectId { get; set; }
+    public string? TenantId { get; set; }
+    public string? Email { get; set; }
+    public string? Tenant { get; set; }
+    public string? CustomField { get; set; }
 }

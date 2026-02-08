@@ -41,28 +41,28 @@ export class AuthService {
   }
 
   getAuthenticatedUser(): Observable<string[]> {
-    if (!this.token) return of([]);
-
-    return this.http.get<AuthUser>(`${this.url}/authenticated-user?token=${this.token}`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`
-        }
-      }
+    return this.http.get<AuthUser>(
+      `${this.url}/authenticated-user`,
+      { withCredentials: true }   // 👈 important
     ).pipe(
       tap(e => {
-        this.roles$.next(e.roles)
+        console.log('call api', e);
+
+        this.roles$.next(e.roles);
         this.user = e.name;
       }),
       map(e => e.roles)
     );
   }
 
+
   getUserName() {
     return this.user;
   }
 
   loadRolesIfEmpty(): Observable<string[]> {
+    console.log('load role ', this.roles$.value);
+
     if (this.roles$.value.length > 0) {
       return new Observable<string[]>(observer => {
         observer.next(this.roles$.value);
@@ -75,6 +75,8 @@ export class AuthService {
   }
 
   hasRole(role: string): boolean {
+    console.log('check role ', role);
+
     return this.roles$.value.includes(role);
   }
 

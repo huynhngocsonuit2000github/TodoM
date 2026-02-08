@@ -16,14 +16,20 @@ export class TodoService {
   constructor(private http: HttpClient) { }
 
   getTodos(): Observable<Todo[]> {
-    return this.http.get<Todo[]>(this.url);
+    return this.http.get<Todo[]>(this.url, {
+      withCredentials: true
+    });
   }
 
   createTodo(title: string): Observable<Todo> {
-    return this.http.post<Todo>(this.url, { title });
+    return this.http.post<Todo>(this.url, { title }, {
+      withCredentials: true
+    });
   }
 
   deleteTodo(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.url}/${id}`);
+    return this.http.delete<void>(`${this.url}/${id}`, {
+      withCredentials: true
+    });
   }
 }

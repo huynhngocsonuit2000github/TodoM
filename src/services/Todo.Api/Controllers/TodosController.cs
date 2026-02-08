@@ -3,6 +3,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Todo.Api.Models;
+using System.Text.Json;
 
 namespace Todo.Api.Controllers;
 
@@ -10,7 +11,8 @@ namespace Todo.Api.Controllers;
 [Route("api/todos")]
 public class TodosController : ControllerBase
 {
-    private static readonly ConcurrentDictionary<int, TodoItem> Store = new();
+    // email -> (id -> todo)
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<int, TodoItem>> Store = new();
     private static int _nextId = 0;
 
     private readonly ILogger<TodosController> _logger;
@@ -20,27 +22,51 @@ public class TodosController : ControllerBase
         _logger = logger;
     }
 
+    private string GetUserEmail()
+    {
+        if (!Request.Cookies.TryGetValue("TODO_custom_cookies", out var raw))
+            throw new UnauthorizedAccessException("Auth cookie missing");
+
+        var ctx = JsonSerializer.Deserialize<AppContextCookie>(raw);
+
+        if (string.IsNullOrWhiteSpace(ctx?.Email))
+            throw new UnauthorizedAccessException("Email missing in cookie");
+
+        return ctx.Email;
+    }
+
+
+    private ConcurrentDictionary<int, TodoItem> GetUserStore()
+    {
+        var email = GetUserEmail();
+        if (string.IsNullOrWhiteSpace(email))
+            throw new UnauthorizedAccessException("Email cookie is missing");
+
+        return Store.GetOrAdd(email, _ => new ConcurrentDictionary<int, TodoItem>());
+    }
+
     [HttpGet]
     public IActionResult GetAll()
     {
-        _logger.LogInformation("GET /api/todos count={Count}", Store.Count);
-        return Ok(Store.Values.OrderBy(x => x.Id));
+        var userStore = GetUserStore();
+        return Ok(userStore.Values.OrderBy(x => x.Id));
     }
 
     [HttpGet("{id:int}")]
     public IActionResult GetById(int id)
     {
-        return Store.TryGetValue(id, out var item) ? Ok(item) : NotFound();
+        var userStore = GetUserStore();
+        return userStore.TryGetValue(id, out var item) ? Ok(item) : NotFound();
     }
 
+    [Authorize(Roles = "AdminAZ")]
     [HttpDelete("{id:int}")]
     public IActionResult DeleteById(int id)
     {
-        return Store.TryRemove(id, out _) ? Ok(new
-        {
-            status = "Success",
-            value = "No worry"
-        }) : NotFound();
+        var userStore = GetUserStore();
+        return userStore.TryRemove(id, out _)
+            ? Ok(new { status = "Success", value = "No worry" })
+            : NotFound();
     }
 
     [HttpPost]
@@ -49,6 +75,7 @@ public class TodosController : ControllerBase
         if (req is null || string.IsNullOrWhiteSpace(req.Title))
             return BadRequest(new { message = "Title is required" });
 
+        var userStore = GetUserStore();
         var id = Interlocked.Increment(ref _nextId);
 
         var item = new TodoItem
@@ -59,10 +86,7 @@ public class TodosController : ControllerBase
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        Store[id] = item;
-
-        _logger.LogInformation("POST /api/todos created id={Id} title={Title}", item.Id, item.Title);
-
+        userStore[id] = item;
         return Created($"/api/todos/{item.Id}", item);
     }
 }
