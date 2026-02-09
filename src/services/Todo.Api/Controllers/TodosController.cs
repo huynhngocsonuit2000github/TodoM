@@ -22,11 +22,11 @@ public class TodosController : ControllerBase
         _logger = logger;
     }
 
-    [Authorize(Roles = "Todo.Read")]
-    [HttpGet]
+    [Authorize(Policy = "WorkerPolicy")]
+    [HttpGet("get-all-external")]
     public IActionResult Get()
     {
-        return Ok("Success from Client");
+        return Ok(Store);
     }
 
 
@@ -53,6 +53,7 @@ public class TodosController : ControllerBase
         return Store.GetOrAdd(email, _ => new ConcurrentDictionary<int, TodoItem>());
     }
 
+    [Authorize]
     [HttpGet]
     public IActionResult GetAll()
     {
@@ -60,6 +61,7 @@ public class TodosController : ControllerBase
         return Ok(userStore.Values.OrderBy(x => x.Id));
     }
 
+    [Authorize]
     [HttpGet("{id:int}")]
     public IActionResult GetById(int id)
     {
@@ -77,6 +79,7 @@ public class TodosController : ControllerBase
             : NotFound();
     }
 
+    [Authorize(Policy = "UserPolicy")]
     [HttpPost]
     public IActionResult Create([FromBody] CreateTodoRequest req)
     {

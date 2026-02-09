@@ -1,0 +1,6 @@
+@workerUrl = https://localhost:5005
+
+GET {{workerUrl}}/call-todo
+Accept: application/json
+
+###

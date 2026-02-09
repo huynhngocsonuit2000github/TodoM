@@ -1,22 +1,10 @@
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenLocalhost(5000, listenOptions =>
-    {
-        listenOptions.UseHttps(
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".aspnet/https/todo.pfx"
-            )
-        );
-    });
-});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -80,7 +68,60 @@ builder.Services
             }
             return Task.CompletedTask;
         };
+    })
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.Authority = $"https://login.microsoftonline.com/{tenantId}/v2.0";
+
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            // 1. Validate both GUID and URI Audiences
+            ValidAudiences = new[]
+            {
+            clientId,
+            $"api://{clientId}"
+        },
+
+            // 2. Validate both v1 and v2 Issuer formats
+            ValidIssuers = new[]
+            {
+            $"https://login.microsoftonline.com/{tenantId}/v2.0",
+            $"https://sts.windows.net/{tenantId}/"
+        }
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                // Log the specific issuer that failed so we can see it
+                Console.WriteLine($"JWT Auth Failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            }
+        };
     });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("UserPolicy", policy =>
+    {
+        policy.AddAuthenticationSchemes(
+            CookieAuthenticationDefaults.AuthenticationScheme);
+        policy.RequireAuthenticatedUser();
+    });
+
+    options.AddPolicy("WorkerPolicy", policy =>
+    {
+        policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+        policy.RequireAuthenticatedUser();
+
+        policy.RequireAssertion(context =>
+            context.User.HasClaim(c =>
+                (c.Type == "roles" || c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                && c.Value == "Todo.Read"));
+    });
+});
+
 
 builder.Services.Configure<OpenIdConnectOptions>(
     OpenIdConnectDefaults.AuthenticationScheme,
