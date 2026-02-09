@@ -1,0 +1,10 @@
+<nav class="nav">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <a routerLink="/todos" routerLinkActive="active">Todos</a>
+    <a routerLink="/about" routerLinkActive="active">About</a>
+    <a routerLink="/login" routerLinkActive="active"> {{ (isAuthenticated$ | async) ? 'Logout' : 'Login' }}</a>
+    <a href="https://localhost:5000/api/auth/login-az">
+
+        {{ (isAuthenticated$ | async) ? 'Logout' : 'Login Azure' }}
+    </a>
+</nav>
