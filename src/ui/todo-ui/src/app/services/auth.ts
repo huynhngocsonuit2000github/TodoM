@@ -51,7 +51,10 @@ export class AuthService {
         this.roles$.next(e.roles);
         this.user = e.name;
       }),
-      map(e => e.roles)
+      map(e => e.roles),
+      catchError(err => {
+        return of([]);
+      })
     );
   }
 
