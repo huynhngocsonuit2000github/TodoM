@@ -1,0 +1,26 @@
+<h2>Studies</h2>
+
+<input type="text" [(ngModel)]="patientName" placeholder="Patient Name">
+<input type="file" (change)="onFileChange($event)">
+<button (click)="upload()">Upload</button>
+
+<hr>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Patient</th>
+        <th>Date</th>
+        <th>Actions</th>
+    </tr>
+
+    <tr *ngFor="let s of studies">
+        <td>{{ s.id }}</td>
+        <td>{{ s.patientName }}</td>
+        <td>{{ s.studyDate | date }}</td>
+        <td>
+            <button (click)="view(s)">View</button>
+            <button (click)="delete(s.id)">Delete</button>
+        </td>
+    </tr>
+</table>

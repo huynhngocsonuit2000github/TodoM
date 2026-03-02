@@ -36,4 +36,4 @@ app.MapGet("/call-todo", async (
     return await res.Content.ReadAsStringAsync();
 });
 
-app.Run();
+app.Run("https://localhost:5005");
